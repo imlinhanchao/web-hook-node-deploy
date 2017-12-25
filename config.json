@@ -1,0 +1,4 @@
+{
+    "events": ["push", "merge_request"],
+    "token": ""
+}

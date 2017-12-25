@@ -1,0 +1,41 @@
+#!/bin/sh
+name=$1
+gitssh=$2
+branch=${3:-master}
+lauch=${4:-./bin/www}
+if [ -z $1 ]; then
+  echo node.js 服务部署脚本
+  exit
+fi
+if [ ! -d ~/node/$name ]; then
+  echo "create ~/node/$name"
+  mkdir -p ~/node/$name
+  cd ~/node/$name
+  echo "goto ~/node/$name"
+  git init
+  git remote add coding $gitssh
+  echo pull $name
+  git pull coding $branch
+  mkdir -p /var/www/node/$name
+  echo sync to web dir /var/www/node/$name
+  rsync -av --exclude=".*" . /var/www/node/$name
+  cd /var/www/node/$name
+  npm install
+  echo restart service
+  forever start --uid $name $lauch
+  tail -f ~/.forever/$name.log
+else
+  branch=${2:-master}
+  echo "goto ~/node/$name"
+  cd ~/node/$name
+  echo pull $name
+  git pull coding $branch
+  echo sync to web dir /var/www/node/$name
+  rsync -av --exclude='config.json' --exclude="session" --exclude="upload" --exclude="node_modules" --exclude=".*" --exclude="*.sh" . /var/www/node/$name 
+  cd /var/www/node/$name
+  npm install
+  echo restart service
+  forever restart $name
+  cp ~/.forever/$name.log ~/.forever/$name.last.log
+  echo $(date) > ~/.forever/$name.log
+fi
